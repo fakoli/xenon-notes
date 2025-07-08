@@ -47,13 +47,13 @@ struct ContentView: View {
                                 .opacity(isRecording ? 0.5 : 1.0)
                             
                             Text("Welcome to Xenon Notes")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
+                                .font(.system(size: 48, weight: .bold))
+                                .foregroundStyle(.white)
                                 .opacity(isRecording ? 0.5 : 1.0)
                             
                             Text("Your AI-powered voice recording assistant")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.65))
                                 .opacity(isRecording ? 0.5 : 1.0)
                             
                             ToggleImmersiveSpaceButton()
@@ -91,7 +91,13 @@ struct ContentView: View {
                     }) {
                         Image(systemName: "gearshape.fill")
                             .foregroundStyle(appSettings?.deepgramEnabled == true ? .blue : .secondary)
+                            .font(.title3)
+                            .frame(width: 44, height: 44)
                     }
+                    .frame(width: 60, height: 60)
+                    .background(.regularMaterial.opacity(0.8))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .hoverEffect(.automatic)
                 }
             }
         }
@@ -222,23 +228,24 @@ struct RecordingRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(recording.title)
-                        .font(.headline)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
                     
                     Text(recording.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.65))
                 }
                 
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(formatDuration(recording.duration))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white)
                     
                     if recording.transcript != nil {
                         Label("Transcribed", systemImage: "text.quote")
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.green)
                     }
                 }
@@ -246,13 +253,20 @@ struct RecordingRow: View {
             
             if let transcript = recording.transcript {
                 Text(transcript.rawText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
                     .lineLimit(2)
                     .padding(.top, 4)
             }
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .background(.regularMaterial.opacity(0.8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .hoverEffect(.automatic)
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
@@ -276,8 +290,8 @@ struct RecordingDetailView: View {
                     // Recording info
                     VStack(alignment: .leading, spacing: 8) {
                         Text(recording.title)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(.white)
                         
                         HStack {
                             Label(recording.createdAt.formatted(date: .complete, time: .shortened), systemImage: "calendar")
@@ -296,7 +310,8 @@ struct RecordingDetailView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Transcript")
-                                    .font(.headline)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(.white)
                                 
                                 Spacer()
                                 
@@ -320,11 +335,16 @@ struct RecordingDetailView: View {
                             }
                             
                             Text(transcript.rawText)
-                                .font(.body)
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(.white)
                                 .textSelection(.enabled)
                         }
                         .padding()
-                        .background(.regularMaterial)
+                        .background(.regularMaterial.opacity(0.8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                     } else if !recording.chunks.isEmpty {
@@ -353,22 +373,28 @@ struct RecordingDetailView: View {
                             showProcessingSheet = true
                         }
                         .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 60)
                         .padding(.horizontal)
+                        .hoverEffect(.automatic)
                     }
                     
                     // Processed Results
                     if !recording.processedResults.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("AI Processing Results")
-                                .font(.headline)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.white)
                             
                             ForEach(recording.processedResults.sorted(by: { $0.createdAt > $1.createdAt })) { result in
                                 ProcessedResultCard(result: result)
                             }
                         }
                         .padding()
-                        .background(.regularMaterial)
+                        .background(.regularMaterial.opacity(0.8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                     }
@@ -376,17 +402,20 @@ struct RecordingDetailView: View {
                     // Chunks info
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Audio Chunks")
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
                         
                         ForEach(recording.chunks.sorted(by: { $0.index < $1.index })) { chunk in
                             HStack {
                                 Text("Chunk \(chunk.index + 1)")
-                                    .font(.subheadline)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(.white)
                                 
                                 Spacer()
                                 
                                 Text(chunk.status.rawValue.capitalized)
-                                    .font(.caption)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(backgroundForStatus(chunk.status))
