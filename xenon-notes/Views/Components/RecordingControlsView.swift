@@ -22,8 +22,8 @@ struct RecordingControlsView: View {
                 VStack(spacing: 12) {
                     // Time display
                     Text(TimeFormatter.timeString(from: recordingTime))
-                        .font(.system(size: 48, weight: .light, design: .monospaced))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 48, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white)
                     
                     // Audio level
                     AudioLevelView(level: audioLevel, height: 40)
@@ -33,21 +33,21 @@ struct RecordingControlsView: View {
                     if !currentTranscript.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Live Transcript")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.65))
                                 .padding(.horizontal)
                             
                             ScrollView {
                                 Text(currentTranscript)
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundStyle(.white)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal)
                             }
                             .frame(maxHeight: 100)
                         }
-                        .background(Color.primary.opacity(0.05))
+                        .background(.regularMaterial.opacity(0.6))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                     }
@@ -58,14 +58,17 @@ struct RecordingControlsView: View {
                             Image(systemName: "stop.fill")
                                 .font(.title3)
                             Text("Stop Recording")
-                                .font(.title3)
-                                .fontWeight(.medium)
+                                .font(.system(size: 20, weight: .semibold))
                         }
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 30)
-                        .padding(.vertical, 12)
+                        .frame(width: 200, height: 60)
                         .background(.red)
+                        .overlay(
+                            Capsule()
+                                .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                        )
                         .clipShape(Capsule())
+                        .hoverEffect(.automatic)
                     }
                 }
                 .padding(.vertical, 20)
@@ -80,14 +83,17 @@ struct RecordingControlsView: View {
                         Image(systemName: "mic.fill")
                             .font(.title2)
                         Text("Start Recording")
-                            .font(.title3)
-                            .fontWeight(.medium)
+                            .font(.system(size: 20, weight: .semibold))
                     }
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 16)
+                    .frame(width: 220, height: 80)
                     .background(.blue)
+                    .overlay(
+                        Capsule()
+                            .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                    )
                     .clipShape(Capsule())
+                    .hoverEffect(.automatic)
                 }
                 .transition(.asymmetric(
                     insertion: .scale.combined(with: .opacity),
@@ -97,12 +103,12 @@ struct RecordingControlsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .background(.regularMaterial.opacity(0.8))
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(.quaternary, lineWidth: 1)
+                .stroke(.white.opacity(0.1), lineWidth: 0.5)
         )
-        .animation(.spring(response: 0.3), value: isRecording)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isRecording)
     }
 }

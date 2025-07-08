@@ -3,7 +3,11 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(xcodebuild:*)"
+      "Bash(xcodebuild:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

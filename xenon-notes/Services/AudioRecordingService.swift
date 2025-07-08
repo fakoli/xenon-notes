@@ -291,7 +291,13 @@ final class AudioRecordingService: NSObject {
         
         // Disconnect from Deepgram
         if deepgramEnabled {
-            deepgramService?.disconnect()
+            // Give Deepgram time to process final audio before disconnecting
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                await MainActor.run {
+                    deepgramService?.disconnect()
+                }
+            }
         }
         
         // Deactivate audio session to save battery

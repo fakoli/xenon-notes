@@ -24,77 +24,129 @@ struct ContentView: View {
     @State private var hasCheckedOnboarding = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Recording Controls Section
-                RecordingControlsView(
-                    isRecording: $isRecording,
-                    recordingTime: audioService.recordingTime,
-                    audioLevel: audioService.audioLevel,
-                    currentTranscript: audioService.currentTranscript,
-                    onStartRecording: startRecording,
-                    onStopRecording: stopRecording
-                )
-                .padding()
-                .disabled(audioService.isRecording && !isRecording) // Prevent interaction during state transitions
+        ZStack {
+            // Background
+            Color.black.opacity(0.001)
+                .ignoresSafeArea()
+            
+            // Main content
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // Top ornament navigation
+                    NavigationOrnament(
+                        showingSettings: $showingSettings,
+                        isRecording: $isRecording,
+                        appSettings: appSettings,
+                        onNewRecording: {
+                            if !isRecording {
+                                startRecording()
+                            } else {
+                                stopRecording()
+                            }
+                        }
+                    )
+                    .padding(.top, 20)
+                    .padding(.horizontal)
+                    .offset(z: 150)
                 
-                // Main Content
-                ScrollView {
-                    if recordings.isEmpty && !isRecording {
+                    // Recording Controls (if actively recording)
+                    if isRecording {
+                        RecordingControlsView(
+                            isRecording: $isRecording,
+                            recordingTime: audioService.recordingTime,
+                            audioLevel: audioService.audioLevel,
+                            currentTranscript: audioService.currentTranscript,
+                            onStartRecording: startRecording,
+                            onStopRecording: stopRecording
+                        )
+                        .padding()
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .offset(z: 200)
+                    }
+                    
+                    // Main Content
+                    ScrollView {
+                        if recordings.isEmpty && !isRecording {
                         VStack(spacing: 20) {
                             Model3D(named: "Scene", bundle: realityKitContentBundle)
                                 .padding(.bottom, 30)
                                 .opacity(isRecording ? 0.5 : 1.0)
                             
                             Text("Welcome to Xenon Notes")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
+                                .font(.system(size: 48, weight: .bold))
+                                .foregroundStyle(.white)
                                 .opacity(isRecording ? 0.5 : 1.0)
                             
                             Text("Your AI-powered voice recording assistant")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.65))
                                 .opacity(isRecording ? 0.5 : 1.0)
                             
                             ToggleImmersiveSpaceButton()
                                 .padding(.top)
+                                .scaleEffect(1.2)
                         }
                         .padding()
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(recordings) { recording in
-                                RecordingRow(recording: recording)
-                                    .onTapGesture {
-                                        if !isRecording {
-                                            selectedRecording = recording
-                                        }
+                        } else {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Recordings")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 24)
+                                
+                                LazyVStack(spacing: 16) {
+                                    ForEach(recordings) { recording in
+                                        RecordingRow(recording: recording)
+                                            .onTapGesture {
+                                                if !isRecording {
+                                                    selectedRecording = recording
+                                                }
+                                            }
+                                            .opacity(isRecording ? 0.5 : 1.0)
+                                            .allowsHitTesting(!isRecording)
+                                            .transition(.asymmetric(
+                                                insertion: .scale.combined(with: .opacity),
+                                                removal: .scale.combined(with: .opacity)
+                                            ))
                                     }
-                                    .opacity(isRecording ? 0.5 : 1.0)
-                                    .allowsHitTesting(!isRecording)
+                                    .onDelete(perform: deleteRecordings)
+                                }
+                                .padding(.horizontal, 24)
                             }
-                            .onDelete(perform: deleteRecordings)
+                            .padding(.top, 20)
                         }
-                        .padding()
                     }
+                    .scrollContentBackground(.hidden)
                 }
+                .navigationTitle("")
+                .navigationBarHidden(true)
             }
-            .navigationTitle("Xenon Notes")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .bottomBar) {
-                    ToggleImmersiveSpaceButton()
-                }
+            .offset(z: 0)
+            
+            // Floating title at top
+            VStack {
+                Text("Xenon Notes")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.top, 60)
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.black.opacity(0.8), Color.black.opacity(0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 200)
+                        .ignoresSafeArea()
+                    )
                 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundStyle(appSettings?.deepgramEnabled == true ? .blue : .secondary)
-                    }
-                }
+                Spacer()
             }
+            .allowsHitTesting(false)
+            .offset(z: -50)
         }
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedRecording) { recording in
             RecordingDetailView(recording: recording)
         }
@@ -222,23 +274,24 @@ struct RecordingRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(recording.title)
-                        .font(.headline)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
                     
                     Text(recording.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.65))
                 }
                 
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(formatDuration(recording.duration))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white)
                     
                     if recording.transcript != nil {
                         Label("Transcribed", systemImage: "text.quote")
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.green)
                     }
                 }
@@ -246,13 +299,20 @@ struct RecordingRow: View {
             
             if let transcript = recording.transcript {
                 Text(transcript.rawText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
                     .lineLimit(2)
                     .padding(.top, 4)
             }
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .background(.regularMaterial.opacity(0.8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .hoverEffect(.automatic)
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
@@ -276,8 +336,8 @@ struct RecordingDetailView: View {
                     // Recording info
                     VStack(alignment: .leading, spacing: 8) {
                         Text(recording.title)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(.white)
                         
                         HStack {
                             Label(recording.createdAt.formatted(date: .complete, time: .shortened), systemImage: "calendar")
@@ -296,16 +356,20 @@ struct RecordingDetailView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Transcript")
-                                    .font(.headline)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(.white)
                                 
                                 Spacer()
                                 
-                                Button("Retranscribe") {
-                                    retranscribe()
+                                // Only show retranscribe if we have audio chunks
+                                if !recording.chunks.isEmpty {
+                                    Button("Retranscribe") {
+                                        retranscribe()
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                                    .disabled(isRetranscribing)
                                 }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .disabled(isRetranscribing)
                             }
                             
                             if isRetranscribing {
@@ -320,11 +384,16 @@ struct RecordingDetailView: View {
                             }
                             
                             Text(transcript.rawText)
-                                .font(.body)
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(.white)
                                 .textSelection(.enabled)
                         }
                         .padding()
-                        .background(.regularMaterial)
+                        .background(.regularMaterial.opacity(0.8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                     } else if !recording.chunks.isEmpty {
@@ -353,22 +422,28 @@ struct RecordingDetailView: View {
                             showProcessingSheet = true
                         }
                         .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 60)
                         .padding(.horizontal)
+                        .hoverEffect(.automatic)
                     }
                     
                     // Processed Results
                     if !recording.processedResults.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("AI Processing Results")
-                                .font(.headline)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.white)
                             
                             ForEach(recording.processedResults.sorted(by: { $0.createdAt > $1.createdAt })) { result in
                                 ProcessedResultCard(result: result)
                             }
                         }
                         .padding()
-                        .background(.regularMaterial)
+                        .background(.regularMaterial.opacity(0.8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                     }
@@ -376,17 +451,20 @@ struct RecordingDetailView: View {
                     // Chunks info
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Audio Chunks")
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
                         
                         ForEach(recording.chunks.sorted(by: { $0.index < $1.index })) { chunk in
                             HStack {
                                 Text("Chunk \(chunk.index + 1)")
-                                    .font(.subheadline)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(.white)
                                 
                                 Spacer()
                                 
                                 Text(chunk.status.rawValue.capitalized)
-                                    .font(.caption)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(backgroundForStatus(chunk.status))
@@ -439,73 +517,37 @@ struct RecordingDetailView: View {
     }
     
     private func retranscribe() {
-        guard !recording.chunks.isEmpty else { return }
+        guard !recording.chunks.isEmpty else { 
+            retranscribeError = "No audio chunks found"
+            showRetranscribeError = true
+            return 
+        }
+        
+        // Check if audio files exist
+        var hasAudioFiles = false
+        for chunk in recording.chunks {
+            if let url = chunk.fileURL, FileManager.default.fileExists(atPath: url.path) {
+                hasAudioFiles = true
+                break
+            }
+        }
+        
+        if !hasAudioFiles {
+            retranscribeError = "Audio files not found. The recording may have been made without saving audio data."
+            showRetranscribeError = true
+            return
+        }
         
         isRetranscribing = true
         retranscribeError = nil
         
+        // For now, show a message that this feature is coming soon
+        // TODO: Implement proper audio file transcription using Deepgram's file API
         Task {
-            do {
-                // Get API key from Keychain
-                guard let apiKey = try KeychainService.retrieveAPIKey(for: .deepgram) else {
-                    throw RetranscribeError.missingAPIKey
-                }
-                
-                // Create a temporary Deepgram service
-                let deepgramService = DeepgramService()
-                deepgramService.setAPIKey(apiKey)
-                
-                // Connect to Deepgram
-                try await deepgramService.connect()
-                
-                // Process all chunks sequentially
-                for chunk in recording.chunks.sorted(by: { $0.index < $1.index }) {
-                    if let url = chunk.fileURL,
-                       FileManager.default.fileExists(atPath: url.path) {
-                        
-                        // Read audio data from chunk
-                        let audioData = try Data(contentsOf: url)
-                        
-                        // Convert to PCM buffer and send to Deepgram
-                        // This is simplified - in production you'd properly decode the audio
-                        try await deepgramService.sendAudioData(audioData)
-                    }
-                }
-                
-                // Wait a bit for final transcription
-                try await Task.sleep(for: .seconds(2))
-                
-                // Update transcript
-                await MainActor.run {
-                    let transcriptText = deepgramService.finalTranscript
-                    if !transcriptText.isEmpty {
-                        if recording.transcript == nil {
-                            let transcript = Transcript(rawText: transcriptText)
-                            recording.transcript = transcript
-                            modelContext.insert(transcript)
-                        } else {
-                            recording.transcript?.rawText = transcriptText
-                        }
-                        
-                        do {
-                            try modelContext.save()
-                        } catch {
-                            print("Failed to save transcript: \(error)")
-                        }
-                    }
-                    
-                    isRetranscribing = false
-                }
-                
-                // Disconnect
-                deepgramService.disconnect()
-                
-            } catch {
-                await MainActor.run {
-                    retranscribeError = error.localizedDescription
-                    showRetranscribeError = true
-                    isRetranscribing = false
-                }
+            await MainActor.run {
+                retranscribeError = "Retranscription from audio files is coming soon. Currently, transcription only works during live recording."
+                showRetranscribeError = true
+                isRetranscribing = false
             }
         }
     }
