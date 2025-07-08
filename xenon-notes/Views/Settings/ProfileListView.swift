@@ -189,11 +189,11 @@ struct ProfileRow: View {
                 
                 HStack(spacing: 8) {
                     if isActive {
-                        StatusBadge(text: "Active", color: .green)
+                        GlassStatusBadge(text: "Active", color: .green)
                     }
                     
                     if !hasAPIKey {
-                        StatusBadge(text: "No API Key", color: .orange)
+                        GlassStatusBadge(text: "No API Key", color: .orange)
                     }
                     
                     if let lastUsed = lastUsed {

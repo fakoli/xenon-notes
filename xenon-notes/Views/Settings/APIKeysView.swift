@@ -130,13 +130,13 @@ struct APIKeyRow: View {
                     .font(.headline)
                 
                 HStack(spacing: 8) {
-                    StatusBadge(
+                    GlassStatusBadge(
                         text: status.hasKey ? "Configured" : "Not Set",
                         color: status.hasKey ? .green : .gray
                     )
                     
                     if let isValid = status.isValid {
-                        StatusBadge(
+                        GlassStatusBadge(
                             text: isValid ? "Valid" : "Invalid",
                             color: isValid ? .green : .red
                         )
@@ -173,21 +173,6 @@ struct APIKeyRow: View {
     }
 }
 
-struct StatusBadge: View {
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        Text(text)
-            .font(.caption)
-            .fontWeight(.medium)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.2))
-            .foregroundStyle(color)
-            .clipShape(Capsule())
-    }
-}
 
 struct ExportImportView: View {
     @Environment(\.dismiss) private var dismiss

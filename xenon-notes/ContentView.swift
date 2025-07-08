@@ -22,25 +22,50 @@ struct ContentView: View {
     @State private var appSettings: AppSettings?
     @State private var showOnboarding = false
     @State private var hasCheckedOnboarding = false
+    @State private var showRecordingView = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Recording Controls Section
-                RecordingControlsView(
-                    isRecording: $isRecording,
-                    recordingTime: audioService.recordingTime,
-                    audioLevel: audioService.audioLevel,
-                    currentTranscript: audioService.currentTranscript,
-                    onStartRecording: startRecording,
-                    onStopRecording: stopRecording
-                )
-                .padding()
-                .disabled(audioService.isRecording && !isRecording) // Prevent interaction during state transitions
+        ZStack {
+            // Background
+            Color.black.opacity(0.001)
+                .ignoresSafeArea()
+            
+            // Main content
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // Top ornament navigation
+                    NavigationOrnament(
+                        showingSettings: $showingSettings,
+                        isRecording: $isRecording,
+                        appSettings: appSettings,
+                        onNewRecording: {
+                            if !isRecording {
+                                showRecordingView = true
+                            }
+                        }
+                    )
+                    .padding(.top, 20)
+                    .padding(.horizontal)
+                    .offset(z: 150)
                 
-                // Main Content
-                ScrollView {
-                    if recordings.isEmpty && !isRecording {
+                    // Recording Controls (if actively recording)
+                    if isRecording {
+                        RecordingControlsView(
+                            isRecording: $isRecording,
+                            recordingTime: audioService.recordingTime,
+                            audioLevel: audioService.audioLevel,
+                            currentTranscript: audioService.currentTranscript,
+                            onStartRecording: startRecording,
+                            onStopRecording: stopRecording
+                        )
+                        .padding()
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .offset(z: 200)
+                    }
+                    
+                    // Main Content
+                    ScrollView {
+                        if recordings.isEmpty && !isRecording {
                         VStack(spacing: 20) {
                             Model3D(named: "Scene", bundle: realityKitContentBundle)
                                 .padding(.bottom, 30)
@@ -58,54 +83,57 @@ struct ContentView: View {
                             
                             ToggleImmersiveSpaceButton()
                                 .padding(.top)
+                                .scaleEffect(1.2)
                         }
                         .padding()
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(recordings) { recording in
-                                RecordingRow(recording: recording)
-                                    .onTapGesture {
-                                        if !isRecording {
-                                            selectedRecording = recording
-                                        }
-                                    }
-                                    .opacity(isRecording ? 0.5 : 1.0)
-                                    .allowsHitTesting(!isRecording)
-                            }
-                            .onDelete(perform: deleteRecordings)
+                        } else {
+                            RecordingGrid(
+                                recordings: recordings,
+                                selectedRecording: $selectedRecording,
+                                isRecording: isRecording
+                            )
+                            .padding(.top, 20)
                         }
-                        .padding()
                     }
+                    .scrollContentBackground(.hidden)
                 }
+                .navigationTitle("")
+                .navigationBarHidden(true)
             }
-            .navigationTitle("Xenon Notes")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .bottomBar) {
-                    ToggleImmersiveSpaceButton()
-                }
+            .offset(z: 0)
+            
+            // Floating title at top
+            VStack {
+                Text("Xenon Notes")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.top, 60)
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.black.opacity(0.8), Color.black.opacity(0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 200)
+                        .ignoresSafeArea()
+                    )
                 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundStyle(appSettings?.deepgramEnabled == true ? .blue : .secondary)
-                            .font(.title3)
-                            .frame(width: 44, height: 44)
-                    }
-                    .frame(width: 60, height: 60)
-                    .background(.regularMaterial.opacity(0.8))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .hoverEffect(.automatic)
-                }
+                Spacer()
             }
+            .allowsHitTesting(false)
+            .offset(z: -50)
         }
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedRecording) { recording in
             RecordingDetailView(recording: recording)
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
+        }
+        .sheet(isPresented: $showRecordingView) {
+            RecordingView()
         }
         .alert("Recording Error", isPresented: $showError) {
             Button("OK") {
