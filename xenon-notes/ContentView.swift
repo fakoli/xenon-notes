@@ -361,12 +361,15 @@ struct RecordingDetailView: View {
                                 
                                 Spacer()
                                 
-                                Button("Retranscribe") {
-                                    retranscribe()
+                                // Only show retranscribe if we have audio chunks
+                                if !recording.chunks.isEmpty {
+                                    Button("Retranscribe") {
+                                        retranscribe()
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                                    .disabled(isRetranscribing)
                                 }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .disabled(isRetranscribing)
                             }
                             
                             if isRetranscribing {
@@ -520,60 +523,31 @@ struct RecordingDetailView: View {
             return 
         }
         
+        // Check if audio files exist
+        var hasAudioFiles = false
+        for chunk in recording.chunks {
+            if let url = chunk.fileURL, FileManager.default.fileExists(atPath: url.path) {
+                hasAudioFiles = true
+                break
+            }
+        }
+        
+        if !hasAudioFiles {
+            retranscribeError = "Audio files not found. The recording may have been made without saving audio data."
+            showRetranscribeError = true
+            return
+        }
+        
         isRetranscribing = true
         retranscribeError = nil
         
+        // For now, show a message that this feature is coming soon
+        // TODO: Implement proper audio file transcription using Deepgram's file API
         Task {
-            do {
-                // Get API key from Keychain
-                guard let apiKey = try KeychainService.retrieveAPIKey(for: .deepgram) else {
-                    throw RetranscribeError.missingAPIKey
-                }
-                
-                // Combine all transcripts from chunks
-                var combinedTranscript = ""
-                
-                for chunk in recording.chunks.sorted(by: { $0.index < $1.index }) {
-                    // Use existing transcript data from chunks if available
-                    if let segment = chunk.transcriptSegment, !segment.text.isEmpty {
-                        if !combinedTranscript.isEmpty {
-                            combinedTranscript += " "
-                        }
-                        combinedTranscript += segment.text
-                    }
-                }
-                
-                // If we have a combined transcript, update the recording
-                await MainActor.run {
-                    if !combinedTranscript.isEmpty {
-                        if recording.transcript == nil {
-                            let transcript = Transcript(rawText: combinedTranscript)
-                            recording.transcript = transcript
-                            modelContext.insert(transcript)
-                        } else {
-                            recording.transcript?.rawText = combinedTranscript
-                        }
-                        
-                        do {
-                            try modelContext.save()
-                        } catch {
-                            print("Failed to save transcript: \(error)")
-                        }
-                    } else {
-                        // If no transcripts in chunks, show error
-                        retranscribeError = "No transcript data found in audio chunks. Please ensure real-time transcription is enabled in settings."
-                        showRetranscribeError = true
-                    }
-                    
-                    isRetranscribing = false
-                }
-                
-            } catch {
-                await MainActor.run {
-                    retranscribeError = error.localizedDescription
-                    showRetranscribeError = true
-                    isRetranscribing = false
-                }
+            await MainActor.run {
+                retranscribeError = "Retranscription from audio files is coming soon. Currently, transcription only works during live recording."
+                showRetranscribeError = true
+                isRetranscribing = false
             }
         }
     }
