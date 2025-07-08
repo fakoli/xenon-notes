@@ -22,7 +22,6 @@ struct ContentView: View {
     @State private var appSettings: AppSettings?
     @State private var showOnboarding = false
     @State private var hasCheckedOnboarding = false
-    @State private var showRecordingView = false
 
     var body: some View {
         ZStack {
@@ -40,7 +39,9 @@ struct ContentView: View {
                         appSettings: appSettings,
                         onNewRecording: {
                             if !isRecording {
-                                showRecordingView = true
+                                startRecording()
+                            } else {
+                                stopRecording()
                             }
                         }
                     )
@@ -87,11 +88,31 @@ struct ContentView: View {
                         }
                         .padding()
                         } else {
-                            RecordingGrid(
-                                recordings: recordings,
-                                selectedRecording: $selectedRecording,
-                                isRecording: isRecording
-                            )
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Recordings")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 24)
+                                
+                                LazyVStack(spacing: 16) {
+                                    ForEach(recordings) { recording in
+                                        RecordingRow(recording: recording)
+                                            .onTapGesture {
+                                                if !isRecording {
+                                                    selectedRecording = recording
+                                                }
+                                            }
+                                            .opacity(isRecording ? 0.5 : 1.0)
+                                            .allowsHitTesting(!isRecording)
+                                            .transition(.asymmetric(
+                                                insertion: .scale.combined(with: .opacity),
+                                                removal: .scale.combined(with: .opacity)
+                                            ))
+                                    }
+                                    .onDelete(perform: deleteRecordings)
+                                }
+                                .padding(.horizontal, 24)
+                            }
                             .padding(.top, 20)
                         }
                     }
@@ -131,9 +152,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
-        }
-        .sheet(isPresented: $showRecordingView) {
-            RecordingView()
         }
         .alert("Recording Error", isPresented: $showError) {
             Button("OK") {
@@ -496,7 +514,11 @@ struct RecordingDetailView: View {
     }
     
     private func retranscribe() {
-        guard !recording.chunks.isEmpty else { return }
+        guard !recording.chunks.isEmpty else { 
+            retranscribeError = "No audio chunks found"
+            showRetranscribeError = true
+            return 
+        }
         
         isRetranscribing = true
         retranscribeError = nil
@@ -508,40 +530,28 @@ struct RecordingDetailView: View {
                     throw RetranscribeError.missingAPIKey
                 }
                 
-                // Create a temporary Deepgram service
-                let deepgramService = DeepgramService()
-                deepgramService.setAPIKey(apiKey)
+                // Combine all transcripts from chunks
+                var combinedTranscript = ""
                 
-                // Connect to Deepgram
-                try await deepgramService.connect()
-                
-                // Process all chunks sequentially
                 for chunk in recording.chunks.sorted(by: { $0.index < $1.index }) {
-                    if let url = chunk.fileURL,
-                       FileManager.default.fileExists(atPath: url.path) {
-                        
-                        // Read audio data from chunk
-                        let audioData = try Data(contentsOf: url)
-                        
-                        // Convert to PCM buffer and send to Deepgram
-                        // This is simplified - in production you'd properly decode the audio
-                        try await deepgramService.sendAudioData(audioData)
+                    // Use existing transcript data from chunks if available
+                    if let segment = chunk.transcriptSegment, !segment.text.isEmpty {
+                        if !combinedTranscript.isEmpty {
+                            combinedTranscript += " "
+                        }
+                        combinedTranscript += segment.text
                     }
                 }
                 
-                // Wait a bit for final transcription
-                try await Task.sleep(for: .seconds(2))
-                
-                // Update transcript
+                // If we have a combined transcript, update the recording
                 await MainActor.run {
-                    let transcriptText = deepgramService.finalTranscript
-                    if !transcriptText.isEmpty {
+                    if !combinedTranscript.isEmpty {
                         if recording.transcript == nil {
-                            let transcript = Transcript(rawText: transcriptText)
+                            let transcript = Transcript(rawText: combinedTranscript)
                             recording.transcript = transcript
                             modelContext.insert(transcript)
                         } else {
-                            recording.transcript?.rawText = transcriptText
+                            recording.transcript?.rawText = combinedTranscript
                         }
                         
                         do {
@@ -549,13 +559,14 @@ struct RecordingDetailView: View {
                         } catch {
                             print("Failed to save transcript: \(error)")
                         }
+                    } else {
+                        // If no transcripts in chunks, show error
+                        retranscribeError = "No transcript data found in audio chunks. Please ensure real-time transcription is enabled in settings."
+                        showRetranscribeError = true
                     }
                     
                     isRetranscribing = false
                 }
-                
-                // Disconnect
-                deepgramService.disconnect()
                 
             } catch {
                 await MainActor.run {
