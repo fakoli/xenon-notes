@@ -64,14 +64,6 @@ open xenon-notes.xcodeproj
 2. Navigate to Settings > API Keys
 3. Add test API keys for services you need to test
 
-Alternatively, create a `.env` file (git-ignored):
-
-```
-DEEPGRAM_API_KEY=your_key_here
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
-```
-
 ### Building
 
 ```bash
