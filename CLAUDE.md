@@ -157,7 +157,12 @@ Store API keys in Keychain using the in-app Settings > API Keys interface, or vi
 
 ```swift
 RealityView { content in
-    try! await content.add(named: "Immersive", from: .init(module: "RealityKitContent"))
+    do {
+        try await content.add(named: "Immersive", from: .init(module: "RealityKitContent"))
+    } catch {
+        // Handle the error appropriately in your app
+        print("Failed to add immersive content: \(error)")
+    }
 }
 ```
 
