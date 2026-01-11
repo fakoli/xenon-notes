@@ -519,7 +519,7 @@ User selects transcript
 
 **Headers:**
 - `x-api-key: {api_key}`
-- `anthropic-version: 2023-06-01`
+- `anthropic-version: 2023-06-01` <!-- Verify this is the latest supported Anthropic API version and update as needed -->
 
 **Request:**
 ```json
