@@ -143,15 +143,21 @@ Prefer `throws` with `do/catch` over optionals or `fatalError`:
 ```swift
 // Preferred
 func loadRecording() throws -> Recording {
-    guard let data = try? Data(contentsOf: url) else {
-        throw RecordingError.fileNotFound
-    }
+    let data = try Data(contentsOf: url)
     return try decoder.decode(Recording.self, from: data)
+}
+
+// Usage with do/catch
+do {
+    let recording = try loadRecording()
+    // Process recording
+} catch {
+    print("Failed to load recording: \(error)")
 }
 
 // Avoid
 func loadRecording() -> Recording? {
-    // ...
+    // Using optionals suppresses errors
 }
 ```
 
