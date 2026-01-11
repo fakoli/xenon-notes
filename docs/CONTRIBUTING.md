@@ -183,11 +183,12 @@ func process(transcript: String, with profile: Profile) async throws -> Processe
 
 ### Branching Strategy
 
-1. **main**: Stable release branch
-2. **develop**: Integration branch for features
-3. **feature/***: New features
-4. **fix/***: Bug fixes
-5. **docs/***: Documentation updates
+This project uses a trunk-based development workflow with the following branch naming conventions:
+
+1. **main**: Primary development and release branch - all PRs target this branch
+2. **feature/***: New features (e.g., `feature/pause-recording`)
+3. **fix/***: Bug fixes (e.g., `fix/websocket-reconnect`)
+4. **docs/***: Documentation updates (e.g., `docs/api-guide`)
 
 ### Creating a Branch
 
