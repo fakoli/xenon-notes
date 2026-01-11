@@ -235,14 +235,15 @@ xcodebuild test -scheme xenon-notes -destination "$device"
 
 ## Roadmap
 
-- [ ] File-based retranscription via Deepgram REST API
-- [ ] Google Gemini integration
-- [ ] Export recordings (audio + transcript)
-- [ ] Share processed results
-- [ ] Enhanced spatial widgets
-- [ ] Persistent UI position memory
-- [ ] iCloud sync
+The items below are planned or exploratory features for this repository. Priorities are relative, and any item with `Timeframe: TBD` has no committed delivery date.
 
+- [ ] File-based retranscription via Deepgram REST API _(Status: Planned, Priority: High, Timeframe: TBD)_
+- [ ] Google Gemini integration _(Status: Exploratory, Priority: Medium, Timeframe: TBD)_
+- [ ] Export recordings (audio + transcript) _(Status: Planned, Priority: High, Timeframe: TBD)_
+- [ ] Share processed results _(Status: Planned, Priority: Medium, Timeframe: TBD)_
+- [ ] Enhanced spatial widgets _(Status: Exploratory, Priority: Medium, Timeframe: TBD)_
+- [ ] Persistent UI position memory _(Status: Planned, Priority: Medium, Timeframe: TBD)_
+- [ ] iCloud sync _(Status: Exploratory, Priority: Low, Timeframe: TBD)_
 ---
 
 ## Contributing
