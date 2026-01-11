@@ -209,7 +209,7 @@ type(scope): description
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation only
-- `style`: Formatting, missing semicolons, etc.
+- `style`: Formatting, whitespace, etc.
 - `refactor`: Code change that neither fixes a bug nor adds a feature
 - `test`: Adding missing tests
 - `chore`: Maintenance tasks
