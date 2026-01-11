@@ -149,7 +149,11 @@ struct xenon_notesApp: App {
             AppSettings.self,
             ProcessedResult.self
         ])
-        modelContainer = try! ModelContainer(for: schema)
+        do {
+            modelContainer = try ModelContainer(for: schema)
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
     }
 }
 ```
